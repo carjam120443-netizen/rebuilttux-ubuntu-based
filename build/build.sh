@@ -14,9 +14,23 @@ MIRROR="http://archive.ubuntu.com/ubuntu"
 
 echo "==> 1/6 Bootstrap Ubuntu $UBUNTU_RELEASE"
 if [[ ! -e "$ROOTFS/etc/os-release" ]]; then debootstrap --arch="$ARCH" "$UBUNTU_RELEASE" "$ROOTFS" "$MIRROR"; fi
-mount --bind /dev "$ROOTFS/dev"; mount --bind /dev/pts "$ROOTFS/dev/pts"; mount -t proc proc "$ROOTFS/proc"; mount -t sysfs sysfs "$ROOTFS/sys"; mount -t tmpfs tmpfs "$ROOTFS/run"
+
+# Ubuntu may create /etc/resolv.conf as a dangling symlink. Replace it with
+# a real file so DNS works while apt runs inside the chroot.
+rm -f "$ROOTFS/etc/resolv.conf"
+if [[ -r /etc/resolv.conf ]]; then
+  awk '/^nameserver / {print}' /etc/resolv.conf > "$ROOTFS/etc/resolv.conf" || true
+fi
+if [[ ! -s "$ROOTFS/etc/resolv.conf" ]]; then
+  printf '%s\n' 'nameserver 1.1.1.1' 'nameserver 8.8.8.8' > "$ROOTFS/etc/resolv.conf"
+fi
+
+mount --bind /dev "$ROOTFS/dev"
+mount --bind /dev/pts "$ROOTFS/dev/pts"
+mount -t proc proc "$ROOTFS/proc"
+mount -t sysfs sysfs "$ROOTFS/sys"
+mount -t tmpfs tmpfs "$ROOTFS/run"
 cleanup(){ umount -lf "$ROOTFS/run" 2>/dev/null || true; umount -lf "$ROOTFS/sys" 2>/dev/null || true; umount -lf "$ROOTFS/proc" 2>/dev/null || true; umount -lf "$ROOTFS/dev/pts" 2>/dev/null || true; umount -lf "$ROOTFS/dev" 2>/dev/null || true; }; trap cleanup EXIT
-cp -L /etc/resolv.conf "$ROOTFS/etc/resolv.conf" || true
 
 chroot "$ROOTFS" /bin/bash <<'CHROOT'
 set -e
