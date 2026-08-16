@@ -1,0 +1,9 @@
+NAME="RebuiltTux"
+PRETTY_NAME="RebuiltTux 0.1"
+ID=rebuilttux
+ID_LIKE=ubuntu debian
+VERSION_ID="0.1"
+VERSION="0.1"
+HOME_URL="https://github.com/carjam120443-netizen/rebuilttux-ubuntu-based"
+SUPPORT_URL="https://github.com/carjam120443-netizen/rebuilttux-ubuntu-based/issues"
+BUG_REPORT_URL="https://github.com/carjam120443-netizen/rebuilttux-ubuntu-based/issues"
