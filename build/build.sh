@@ -6,7 +6,7 @@ ROOTFS="$BUILD_DIR/rootfs"
 ISO_DIR="$BUILD_DIR/iso"
 CONFIG="$ROOT_DIR/build/config"
 source "$CONFIG"
-: "${UBUNTU_RELEASE:=noble}"; : "${ARCH:=amd64}"; : "${DESKTOP:=xfce}"
+: "${UBUNTU_RELEASE:=noble}"; : "${ARCH:=amd64}"; : "${DESKTOP:=gnome}"
 [[ $EUID -eq 0 ]] || { echo "Run with sudo/root."; exit 1; }
 for c in debootstrap mksquashfs grub-mkrescue xorriso; do command -v "$c" >/dev/null || { echo "Missing required tool: $c"; exit 1; }; done
 mkdir -p "$BUILD_DIR" "$ROOTFS" "$ISO_DIR/boot/grub" "$ISO_DIR/casper"
@@ -15,15 +15,9 @@ MIRROR="http://archive.ubuntu.com/ubuntu"
 echo "==> 1/6 Bootstrap Ubuntu $UBUNTU_RELEASE"
 if [[ ! -e "$ROOTFS/etc/os-release" ]]; then debootstrap --arch="$ARCH" "$UBUNTU_RELEASE" "$ROOTFS" "$MIRROR"; fi
 
-# Ubuntu may create /etc/resolv.conf as a dangling symlink. Replace it with
-# a real file so DNS works while apt runs inside the chroot.
 rm -f "$ROOTFS/etc/resolv.conf"
-if [[ -r /etc/resolv.conf ]]; then
-  awk '/^nameserver / {print}' /etc/resolv.conf > "$ROOTFS/etc/resolv.conf" || true
-fi
-if [[ ! -s "$ROOTFS/etc/resolv.conf" ]]; then
-  printf '%s\n' 'nameserver 1.1.1.1' 'nameserver 8.8.8.8' > "$ROOTFS/etc/resolv.conf"
-fi
+if [[ -r /etc/resolv.conf ]]; then awk '/^nameserver / {print}' /etc/resolv.conf > "$ROOTFS/etc/resolv.conf" || true; fi
+if [[ ! -s "$ROOTFS/etc/resolv.conf" ]]; then printf '%s\n' 'nameserver 1.1.1.1' 'nameserver 8.8.8.8' > "$ROOTFS/etc/resolv.conf"; fi
 
 mount --bind /dev "$ROOTFS/dev"
 mount --bind /dev/pts "$ROOTFS/dev/pts"
@@ -35,10 +29,25 @@ cleanup(){ umount -lf "$ROOTFS/run" 2>/dev/null || true; umount -lf "$ROOTFS/sys
 chroot "$ROOTFS" /bin/bash <<'CHROOT'
 set -e
 export DEBIAN_FRONTEND=noninteractive
+
+# debootstrap starts with Ubuntu's minimal main repository. Enable Universe
+# because desktop environments and many desktop applications live there.
+cat > /etc/apt/sources.list <<'EOF'
+deb http://archive.ubuntu.com/ubuntu noble main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu noble-updates main restricted universe multiverse
+deb http://security.ubuntu.com/ubuntu noble-security main restricted universe multiverse
+EOF
+
 apt-get update
-apt-get install -y linux-image-generic systemd-sysv sudo network-manager dbus xorg xfce4 lightdm lightdm-gtk-greeter casper initramfs-tools grub-pc grub-efi-amd64-signed shim-signed
+
+# RebuiltTux uses GNOME + GDM rather than XFCE + LightDM.
+apt-get install -y linux-image-generic systemd-sysv sudo network-manager dbus \
+  ubuntu-desktop-minimal gdm3 casper initramfs-tools grub-pc \
+  grub-efi-amd64-signed shim-signed
+
 apt-get clean
 rm -rf /var/lib/apt/lists/*
+
 cat > /etc/os-release <<'EOF'
 NAME="RebuiltTux"
 PRETTY_NAME="RebuiltTux Ubuntu Based"
@@ -48,8 +57,9 @@ VERSION_ID="0.1"
 VERSION="0.1 (Ubuntu Based)"
 HOME_URL="https://github.com/carjam120443-netizen/rebuilttux-ubuntu-based"
 EOF
+
 echo rebuilttux > /etc/hostname
-systemctl enable NetworkManager lightdm || true
+systemctl enable NetworkManager gdm3 || true
 update-initramfs -c -k all || update-initramfs -u -k all
 CHROOT
 
@@ -82,6 +92,8 @@ EOF
 cat > "$ISO_DIR/README" <<'EOF'
 RebuiltTux Ubuntu Based live ISO
 Boot with the default RebuiltTux entry.
+Desktop: GNOME
+Display manager: GDM3
 EOF
 
 echo "==> 6/6 Generate ISO"
