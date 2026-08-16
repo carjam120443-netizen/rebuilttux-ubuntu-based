@@ -1,0 +1,11 @@
+[Unit]
+Description=RebuiltTux first boot initialization
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/rebuilttux-firstboot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
