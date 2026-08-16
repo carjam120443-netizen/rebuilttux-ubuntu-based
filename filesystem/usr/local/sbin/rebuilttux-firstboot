@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+
+STAMP=/var/lib/rebuilt-tux-firstboot
+if [ -e "$STAMP" ]; then exit 0; fi
+
+mkdir -p /var/lib
+printf 'RebuiltTux first boot completed on %s\n' "$(date -u)" > "$STAMP"
+chmod 644 "$STAMP"
+exit 0
