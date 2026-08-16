@@ -1,5 +1,7 @@
 # RebuiltTux build configuration
-UBUNTU_RELEASE=24.04
+# Ubuntu 24.04 LTS uses the codename "noble" with debootstrap.
+UBUNTU_RELEASE=noble
+UBUNTU_VERSION=24.04
 ARCH=amd64
 DISTRO_NAME=RebuiltTux
 DISTRO_ID=rebuilttux
