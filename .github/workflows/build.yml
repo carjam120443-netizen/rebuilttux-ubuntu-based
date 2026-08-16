@@ -13,12 +13,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y debootstrap squashfs-tools grub-pc-bin grub-efi-amd64-bin grub-imageboot xorriso mtools
+          sudo apt-get install -y debootstrap squashfs-tools grub-pc-bin grub-efi-amd64-bin grub-efi-amd64-signed shim-signed xorriso mtools
+
+      - name: Verify build files
+        run: |
+          pwd
+          ls -la
+          ls -la build
+          test -f build/build.sh
+
       - name: Build ISO
-        run: sudo ./build/build.sh
+        run: sudo bash build/build.sh
+
       - name: Upload ISO
         uses: actions/upload-artifact@v4
         with:
