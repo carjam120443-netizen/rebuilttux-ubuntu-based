@@ -1,0 +1,7 @@
+# RebuiltTux build configuration
+UBUNTU_RELEASE=24.04
+ARCH=amd64
+DISTRO_NAME=RebuiltTux
+DISTRO_ID=rebuilttux
+DISTRO_VERSION=0.1
+DESKTOP=xfce
