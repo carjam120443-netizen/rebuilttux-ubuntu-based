@@ -6,7 +6,7 @@ ROOTFS="$BUILD_DIR/rootfs"
 ISO_DIR="$BUILD_DIR/iso"
 CONFIG="$ROOT_DIR/build/config"
 source "$CONFIG"
-: "${UBUNTU_RELEASE:=24.04}"; : "${ARCH:=amd64}"; : "${DESKTOP:=xfce}"
+: "${UBUNTU_RELEASE:=noble}"; : "${ARCH:=amd64}"; : "${DESKTOP:=xfce}"
 [[ $EUID -eq 0 ]] || { echo "Run with sudo/root."; exit 1; }
 for c in debootstrap mksquashfs grub-mkrescue xorriso; do command -v "$c" >/dev/null || { echo "Missing required tool: $c"; exit 1; }; done
 mkdir -p "$BUILD_DIR" "$ROOTFS" "$ISO_DIR/boot/grub" "$ISO_DIR/casper"
